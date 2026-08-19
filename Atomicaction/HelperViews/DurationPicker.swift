@@ -9,7 +9,7 @@ import SwiftUI
 
 struct DurationPicker: View {
     @Binding var minutes: Int
-    let steps: [Int] = Array(stride(from: AppConstants.taskDuration, through: AppConstants.totalTaskMinutes, by: AppConstants.taskDuration))
+    let steps: [Int] = Array(stride(from: AppConstants.initialTaskDuration, through: AppConstants.maxTaskMinutes, by: AppConstants.stepTaskDuration))
     let isRunning: Bool
     private let tickSpacing: CGFloat = 48
     private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
