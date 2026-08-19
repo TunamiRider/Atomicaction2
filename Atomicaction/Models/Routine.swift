@@ -15,6 +15,7 @@ final class Routine {
     
     init (routines: [RTask] = []){
         self.routines = routines
+        self.completeDate = Calendar.current.date(byAdding: .day, value: -1, to: .now) ?? .now
     }
     
     var sortedTasks: [RTask] {
@@ -29,11 +30,15 @@ class RTask: Identifiable{
     var routine_description: String
     var order: Int
     var doneToday: Bool
+    var icon: ActionIcon
+    var completeDate: Date?
     
-    init(minutes:Int, routine_description: String, order: Int = 0, doneToday: Bool = false){
+    
+    init(minutes:Int, routine_description: String, order: Int = 0, doneToday: Bool = false, icon: ActionIcon = ActionIcon(systemName: "book.fill", hexCode: "#1A7373")){
         self.minutes = minutes
         self.routine_description = routine_description
         self.order = order
         self.doneToday = doneToday
+        self.icon = icon
     }
 }

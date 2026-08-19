@@ -37,4 +37,10 @@ final class AppRouter: ObservableObject {
     func goToRoutineSession(routine: Routine){
         currentScreen = .routineSession(routine: routine)
     }
+    
+    func navigateTo(_ screen: RootScreen) {
+        withAnimation(.easeInOut(duration: 0.6)) {
+            self.currentScreen = screen
+        }
+    }
 }

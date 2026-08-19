@@ -9,16 +9,69 @@ import SwiftUI
 
 enum AppTheme {
     
-    static let backgroundGradient = LinearGradient (
-        colors: [
-            Color(red: 0.29, green: 0.53, blue: 0.52),   // deep teal
-            Color(red: 0.34, green: 0.58, blue: 0.57),   // mid teal
-            Color(red: 0.42, green: 0.64, blue: 0.62),   // soft seafoam
-            Color(red: 0.51, green: 0.71, blue: 0.68)    // light aqua
-        ],
-        startPoint: .top,
-        endPoint: .bottom
-    )
+    // Helper to create a dynamic light/dark SwiftUI Color
+    private static func dynamicColor(light: Color, dark: Color) -> Color {
+        Color(uiColor: UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light)
+        })
+    }
+    
+    // Dynamic Text Colors
+    static var textPrimary: Color {
+        dynamicColor(
+            light: Color(white: 0.95),  // Bright white/off-white for dark light-mode background
+            dark: Color(white: 1.0)     // Pure white for dark mode
+        )
+    }
+    
+    static var textSecondary: Color {
+        dynamicColor(
+            light: Color(white: 0.80),  // Light muted gray for dark teal background
+            dark: Color(white: 0.70)    // Slightly darker muted gray for dark mode
+        )
+    }
+    
+    static var backgroundGradient: LinearGradient {
+            LinearGradient(
+                colors: [
+                    // Top Color (Dark Forest Teal)
+                    dynamicColor(
+                        light: Color(red: 0.05, green: 0.22, blue: 0.25),
+                        dark: Color(red: 0.18, green: 0.08, blue: 0.24) // Deep Eggplant/Plum
+                    ),
+                    // Second Color (Rich Dark Teal)
+                    dynamicColor(
+                        light: Color(red: 0.08, green: 0.28, blue: 0.31),
+                        dark: Color(red: 0.24, green: 0.12, blue: 0.32)
+                    ),
+                    // Third Color (Deep Spruce Teal)
+                    dynamicColor(
+                        light: Color(red: 0.12, green: 0.35, blue: 0.38),
+                        dark: Color(red: 0.32, green: 0.16, blue: 0.42)
+                    ),
+                    // Bottom Color (Muted Dark Teal Base)
+                    dynamicColor(
+                        light: Color(red: 0.18, green: 0.42, blue: 0.45),
+                        dark: Color(red: 0.40, green: 0.20, blue: 0.50)
+                    )
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+    }
+    
+    static var strokeForProgressArc: Color {
+        dynamicColor(
+                    light: Color(red: 0.35, green: 0.88, blue: 0.82), // Glowing Seafoam Teal
+                    dark: Color(red: 0.82, green: 0.55, blue: 0.98)   // Vibrant Lavender/Violet
+                )
+    }
+    static var strokeShadowForProgressArc: Color {
+        dynamicColor(
+                    light: Color(red: 0.35, green: 0.88, blue: 0.82).opacity(0.4),
+                    dark: Color(red: 0.82, green: 0.55, blue: 0.98).opacity(0.4)
+                )
+    }
     
     static let defaultIconTint = LinearGradient(
         colors: [
