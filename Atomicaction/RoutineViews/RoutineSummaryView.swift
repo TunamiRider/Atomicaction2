@@ -56,12 +56,14 @@ struct PieChartView: View {
         var result: [Slice] = []
         var currentAngle = Angle.degrees(0)
 
-        for (index, task) in tasks.enumerated() {
+        for (_, task) in tasks.enumerated() {
             let fraction = total > 0 ? Double(task.minutes) / total : 0
             let sweep = Angle.degrees(fraction * 360)
             let endAngle = currentAngle + sweep
             result.append(
-                Slice(task: task, startAngle: currentAngle, endAngle: endAngle, color: colors[index % colors.count],icon: icons[index % icons.count])
+//                Slice(task: task, startAngle: currentAngle, endAngle: endAngle, color: colors[index % colors.count],icon: icons[index % icons.count])
+                
+                Slice(task: task, startAngle: currentAngle, endAngle: endAngle, color: task.icon.color,icon: task.icon.systemName)
                 
             )
             currentAngle = endAngle
@@ -74,13 +76,7 @@ struct PieChartView: View {
     private let minSweepForIcon: Double = 18
 
     var body: some View {
-//        ZStack {
-//            ForEach(slices) { slice in
-//                PieSlice(startAngle: slice.startAngle, endAngle: slice.endAngle)
-//                    .fill(slice.color)
-//            }
-//        }
-//        .aspectRatio(1, contentMode: .fit)
+
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
             let radius = size / 2
@@ -90,8 +86,38 @@ struct PieChartView: View {
                 ForEach(slices) { slice in
                     PieSlice(startAngle: slice.startAngle, endAngle: slice.endAngle)
                         .fill(slice.color)
-                        .shadow(color: Color.black.opacity(0.1), radius: 1, x: 1, y: 1)
-                        .shadow(color: Color.black.opacity(0.1), radius: 1, x: -1, y: -1)
+//                        .shadow(color: Color.black.opacity(0.1), radius: 1, x: 1, y: 1)
+//                        .shadow(color: Color.black.opacity(0.1), radius: 1, x: -1, y: -1)
+                    // 🌟 Top-Left Glossy Highlight Overlay
+                        .overlay(
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.gray.opacity(0.45),
+                                            Color.gray.opacity(0.10),
+                                            Color.clear
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .blendMode(.overlay) // Blends cleanly into base slice colors
+                                .allowsHitTesting(false)
+                        )
+                        // 🌟 Rim Light / Border Glow
+                        .overlay(
+                            Circle()
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.6), Color.clear, Color.white.opacity(0.1)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.5
+                                )
+                                .allowsHitTesting(false)
+                        )
                 }
  
                 ForEach(slices) { slice in
@@ -108,17 +134,6 @@ struct PieChartView: View {
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.25), radius: 1, x: 0, y: 1)
                             .position(x: x, y: y)
-//                            .overlay{
-//                                
-//                                if slice.task.doneToday {
-//                                    Text("Done")
-//                                        .font(.system(size: max(12, size * 0.08), weight: .semibold))
-//                                        .position(x: x, y: y)
-//                                        .shadow(color: .black.opacity(0.25), radius: 1, x: 0, y: 1)
-//                                        .background(Color.clear)
-//                                        .foregroundColor(.white)
-//                                }
-//                            }
                     }
                 }
             }
@@ -137,6 +152,7 @@ struct RoutineSummaryView: View {
     @State private var expandedTasks: Set<String> = []
     
     @State private var legendPage = 0
+    @State private var isTapped: Bool = false
 
     // Cycle through these colors in order, same order the tasks are stored.
     private let palette: [Color] = [
@@ -200,7 +216,7 @@ struct RoutineSummaryView: View {
                 
                 VStack {
                     Button {
-                        router.goToEditRoutine(routine: routine)
+                        router.navigateTo(.editRoutine(routine: routine))
                     } label: {
                         Text("Edit Routine")
                             .frame(maxWidth: .infinity)
@@ -212,10 +228,7 @@ struct RoutineSummaryView: View {
                     .modifier(AppButtonModifiler())
                     
                     Button {
-                        
-                        //withAnimation(.easeIn(duration: 1)) {
-                                router.goToRoutineSession(routine: routine)
-                        //}
+                        router.navigateTo(.routineSession(routine: routine))
                     } label: {
                         Text("Start Routine")
                             .frame(maxWidth: .infinity)
@@ -246,15 +259,15 @@ struct RoutineSummaryView: View {
                                 .foregroundColor(.white.opacity(1))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(palette[index % palette.count].opacity(1), in: Capsule())
+                                .background(task.icon.color.opacity(1), in: Capsule())
                         }
                         
-                        Image(systemName: iconPalette[index % iconPalette.count])
-                            .foregroundStyle(palette[index % palette.count])
+                        Image(systemName: task.icon.systemName)
+                            .foregroundStyle(task.icon.color)
                         Text("\(task.minutes) mins")
                             .font(.system(.headline, design: .rounded, weight: .bold))
                             .italic()
-                            .foregroundStyle(palette[index % palette.count])
+                            .foregroundStyle(task.icon.color)
                     }
 
                     let description = task.routine_description
@@ -319,14 +332,44 @@ private extension Array {
     )
     
     
-    let sampleTasks: [RTask] = [ RTask(minutes: 10, routine_description: "Read a book Read a book Read a book Read a book Read a book Read a book Read a book Read a book Read a book "),
-                                 RTask(minutes: 10, routine_description: "Exercise your muscle1 aaaaaaaa dddddd ffffff   ddwdwwqrqrqdrwqrv3q fewnrew;uo griowf;ntfeia grientferuisof fheionferi"),
+/*
+ let defaultPaletteHexes = [
+             "#1A7373", // dark teal
+             "#8CC7E6", // light blue
+             "#59BF73", // green
+             "#F2BF4D", // yellow
+             "#F29940", // orange
+             "#BF668C", // rose
+             "#9980CC", // lavender
+             "#4D80B2", // steel blue
+             "#334D73", // deep navy
+             "#CC6633"  // terra cotta
+         ]
+ 
+ let defaultIconPalettes: [String] = [
+     "book.fill",
+     "figure.walk",
+     "leaf.fill",
+     "cup.and.saucer.fill",
+     "flame.fill",
+     "heart.fill",
+     "moon.stars.fill",
+     "drop.fill",
+     "pencil",
+     "sun.max.fill"
+ ]
+ 
+ */
+    
+    let sampleTasks: [RTask] = [
+        RTask(minutes: 10, routine_description: "Read a book Read a book Read a book Read a book Read a book Read a book Read a book Read a book Read a book ",icon: ActionIcon(systemName: "book.fill", hexCode: "#CC6633")),
+                                 RTask(minutes: 10, routine_description: "Exercise your muscle1 aaaaaaaa dddddd ffffff   ddwdwwqrqrqdrwqrv3q fewnrew;uo griowf;ntfeia grientferuisof fheionferi", icon: ActionIcon(systemName: "book.fill", hexCode: "#8CC7E6")),
                                  
-                                 RTask(minutes: 10, routine_description: "Exercise your muscle2", doneToday: true),
+                                 RTask(minutes: 10, routine_description: "Exercise your muscle2", doneToday: true, icon: ActionIcon(systemName: "figure.walk", hexCode: "#334D73")),
                                  
-                                 RTask(minutes: 10, routine_description: "Exercise your muscle3", doneToday: true),
+                                 RTask(minutes: 10, routine_description: "Exercise your muscle3", doneToday: true, icon: ActionIcon(systemName: "book.fill", hexCode: "#F29940")),
                                  
-                                 RTask(minutes: 10, routine_description: "Exercise your muscl4", doneToday: true),
+                                 RTask(minutes: 10, routine_description: "Exercise your muscl4", doneToday: true, icon: ActionIcon(systemName: "book.fill", hexCode: "#9980CC")),
                                  
 //                                 RTask(minutes: 10, routine_description: "Exercise your muscle4"),
 //                                 
@@ -345,65 +388,3 @@ private extension Array {
     
     RoutineSummaryView(routine: sampleRoutine, router: appRouter).modelContainer(container)
 }
-
-
-
-//            ScrollView {
-//                VStack(spacing: 24) {
-//
-//                    Text("THE 1-HOUR ROUTINE")
-//                        .font(.title2.bold())
-//                        .foregroundColor(.white)
-//                        .multilineTextAlignment(.center)
-//
-////                    Text("Choose a starting point,\nthen go around the circle!")
-////                        .font(.system(.subheadline, design: .rounded))
-////                        .foregroundStyle(.secondary)
-////                        .multilineTextAlignment(.center)
-//
-//                    PieChartView(tasks: routine.routines, colors: palette)
-//                        .padding(.horizontal, 32)
-//
-//                    legend
-//
-//                    if totalMinutes < 60 {
-//                        Text("Got more time? +\(60 - totalMinutes) mins left to fill")
-//                            .font(.system(.footnote, design: .rounded, weight: .semibold))
-//                            .foregroundStyle(.secondary)
-//                    }
-//
-//                    Button {
-//                        router.goToCreateRoutine()
-//                    } label: {
-//                        Text("Edit Routine")
-//                            .frame(maxWidth: .infinity)
-//                    }
-//                    .buttonStyle(.borderedProminent)
-//                    .controlSize(.large)
-//                    .foregroundStyle(.secondary)
-//                }
-//                .padding()
-//            }
-//            .navigationTitle("THE 1-HOUR ROUTINE")
-//            .navigationBarTitleDisplayMode(.inline)
-
-
-
-//    private var legend: some View {
-//        let columns = [GridItem(.flexible()), GridItem(.flexible())]
-//        return LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
-//            ForEach(Array(routine.routines.enumerated()), id: \.offset) { index, task in
-//                VStack(alignment: .leading, spacing: 2) {
-//                    Text("\(task.minutes) mins")
-//                        .font(.system(.headline, design: .rounded, weight: .bold))
-//                        .italic()
-//                        .foregroundStyle(palette[index % palette.count])
-//                    Text(task.routine_description)
-//                        .font(.system(.subheadline, design: .rounded))
-//                        .italic()
-//                        .foregroundStyle(.primary)
-//                }
-//            }
-//        }
-//        .frame(maxWidth: .infinity, alignment: .leading)
-//    }

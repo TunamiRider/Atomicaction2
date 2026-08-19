@@ -14,6 +14,7 @@
 
 import SwiftUI
 import SwiftData
+import AVFoundation
 struct SeaSaltTimer2: View {
     
     @Binding var title: String
@@ -39,7 +40,8 @@ struct SeaSaltTimer2: View {
     //@State private var minutes: Int = 5
 
     @State private var breakStartDate: Date? = nil
-
+    
+    private let dingPlayer = AVPlayer.dingPlayer()
     // MARK: - Computed
     private var progress: Double {
         guard totalSeconds > 0 else { return 0 }
@@ -53,24 +55,45 @@ struct SeaSaltTimer2: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            AppTheme.backgroundGradient.ignoresSafeArea(.all)
 
             VStack(spacing: 0) {
-                Spacer().frame(height: 10)
-
+                //Spacer().frame(height: 10)
                 // ── Circular dial ──────────────────────────────────────────
                 ZStack {
                     // Background ring
                     Circle()
-                        .stroke(Color.white.opacity(0.4), lineWidth: 1.5)
-                        .frame(width: 240, height: 240)
-                        .shadow(color: Color.black.opacity(0.4), radius: 1, x: 0, y: 1)
-
+                        .stroke(
+                            AngularGradient(
+                                colors: [
+                                    .gray.opacity(0.8),
+                                    .white.opacity(0.95),                  // High-contrast shiny light reflection
+                                    .gray.opacity(0.8),
+                                    .gray.opacity(0.5), // Subtle shadow side
+                                    .white.opacity(0.7),                   // Secondary gleam
+                                    .gray.opacity(0.8)
+                                ],
+                                center: .center,
+                                startAngle: .degrees(-45),
+                                endAngle: .degrees(315)
+                            ),
+                            lineWidth: 8
+                        )
+                        .frame(width: 260, height: 260)
+                        .shadow(color: Color.black.opacity(0.8), radius: 2, x: 0, y: 1)
+                        .shadow(color: .white.opacity(0.3), radius: 6)
                     // Progress arc
                     Circle()
                         .trim(from: 0, to: progress)
-                        .stroke(Color.white.opacity(0.70), lineWidth: 1.5)
-                        .frame(width: 240, height: 240)
+                        //.stroke(Color.white.opacity(0.70), lineWidth: 1.5)
+                        .stroke(
+                            AppTheme.strokeForProgressArc,
+                                style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                            )
+                            .shadow(
+                                color: AppTheme.strokeShadowForProgressArc,
+                                radius: 6
+                            )
+                        .frame(width: 260, height: 260)
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 1), value: progress)
 
@@ -78,34 +101,59 @@ struct SeaSaltTimer2: View {
                     dotIndicator
 
                     // Time display
-                    VStack(spacing: 4) {
-                        Text(String(format: "%02d", displayMinutes))
-                            .font(.system(size: 72, weight: .thin, design: .default))
-                            .foregroundColor(.white)
-                            .shadow(color: Color.black.opacity(0.4), radius: 1, x: 0, y: 1)
+//                    VStack(spacing: 4) {
+//                        Text(String(format: "%02d", displayMinutes))
+//                            .font(.system(size: 72, weight: .thin, design: .default))
+//                            .foregroundColor(.white)
+//                            .shadow(color: Color.black.opacity(0.4), radius: 1, x: 0, y: 1)
+//
+//                        Text(String(format: "%02d", displaySeconds))
+//                            .font(.system(size: 52, weight: .thin, design: .default))
+//                            .foregroundColor(.white.opacity(0.55))
+//                            .shadow(color: Color.black.opacity(0.4), radius: 1, x: 0, y: 1)
+//                    }
+//                }
+//                .frame(width: 240, height: 240)
+                    VStack(spacing: 8) {
+                        // 1. Main Timer Countdown
+                        HStack(spacing: 4) {
+                            Text(String(format: "%02d", displayMinutes))
 
-                        Text(String(format: "%02d", displaySeconds))
-                            .font(.system(size: 52, weight: .thin, design: .default))
-                            .foregroundColor(.white.opacity(0.55))
-                            .shadow(color: Color.black.opacity(0.4), radius: 1, x: 0, y: 1)
+                            Text(":")
+                            
+                            Text(String(format: "%02d", displaySeconds))
+                        }
+                        .font(.system(size: 72, weight: .thin, design: .default).monospacedDigit())
+                        .foregroundColor(.white)
+                        .shadow(color: Color.black.opacity(0.8), radius: 1, x: 0, y: 1)
+
+                        // 2. Current Time Badge (Updates live every second)
+                        TimelineView(.periodic(from: .now, by: 1.0)) { context in
+                            HStack(spacing: 6) {
+                                Image(systemName: "clock.fill") // or "bell.fill" / "alarm.fill"
+                                    .font(.system(size: 13, weight: .medium))
+                                
+                                Text(context.date.formatted(date: .omitted, time: .shortened))
+                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                            }
+                            .foregroundColor(.white.opacity(0.75))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(.white.opacity(0.12), in: Capsule())
+                            .shadow(color: Color.black.opacity(0.8), radius: 1, x: 0, y: 1)
+                        }
                     }
                 }
-                .frame(width: 240, height: 240)
+                .frame(width: 260, height: 260)
 
                 Spacer().frame(height: 20)
 
                 // ── Label ──────────────────────────────────────────────────
                 VStack(spacing: 6) {
-                    Text(isFinished ? "Time's up" : isRunning ? "Focusing on" : (isSnoozed ? "Having a break" : "Begin"))
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundColor(.white)
-                        .shadow(color: Color.black.opacity(0.8), radius: 2, x: 0, y: 1)
-
-//                    HStack(spacing: 6) {
-//                        Text(title)
-//                            .font(.system(size: 24, weight: .regular))
-//                            .foregroundColor(.white.opacity(1))
-//                    }
+//                    Text(isFinished ? "Time's up" : isRunning ? "Focusing on" : (isSnoozed ? "Having a break" : "Begin"))
+//                        .font(.system(size: 24, weight: .semibold))
+//                        .foregroundColor(.white)
+//                        .shadow(color: Color.black.opacity(0.8), radius: 2, x: 0, y: 1)
 
                     // MARK: - Description Display
                     Group {
@@ -140,14 +188,19 @@ struct SeaSaltTimer2: View {
                             }
                         } else {
                             ScrollView(.vertical, showsIndicators: false) {
+                                
                                 Text(description)
                                     .font(.system(size: 22, weight: .regular))
-                                    .foregroundColor(.white.opacity(1))
+                                    .foregroundColor(.white.opacity(0.80))
                                     .multilineTextAlignment(.center)
+
+                                    .frame(maxWidth: .infinity)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .containerRelativeFrame(.vertical, alignment: .center)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 8)
-                                    .frame(maxWidth: .infinity)
-                            }
+                                
+                            }.frame(maxWidth: .infinity)
                         }
                     }
                     .background(
@@ -160,7 +213,6 @@ struct SeaSaltTimer2: View {
                     )
                     .frame(height: 300) // set a stable height
                     .padding(.horizontal, 40)
-                    //.opacity(showDescription && !description.isEmpty ? 1 : 0)
                     .shadow(color: Color.black.opacity(0.8), radius: 2, x: 0, y: 1)
                     .animation(.spring(response: 0.35, dampingFraction: 0.75), value: showDescription)
                 }
@@ -173,25 +225,12 @@ struct SeaSaltTimer2: View {
                     Button {
                         if isFinished {
                             completeRountine()
-                            print("isFinished")
                         } else if !isRunning  {
                             startTimer()
                         } else {
                             haveaBreak()
                         }
                     } label: {
-//                        Text(isFinished ? "Complete" : isRunning ? "Have a break" : "Start focus")
-//                            .font(.system(size: 18, weight: .regular))
-//                            .foregroundColor(.white)
-//                            .frame(maxWidth: .infinity)
-//                            .frame(height: 58)
-//                            .background(Color.black.opacity(0.25))
-//                            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-//                            .overlay(
-//                                RoundedRectangle(cornerRadius: 30, style: .continuous)
-//                                    .stroke(Color.white.opacity(0.35), lineWidth: 1)
-//                            )
-                        
                         Text(isFinished ? "Complete" : isRunning ? "Have a break" : "Start focus")
                             .font(.system(size: 18, weight: .regular))
                             .foregroundColor(.white)
@@ -297,9 +336,10 @@ struct SeaSaltTimer2: View {
                         ))
                         
                     }
-                }.animation(.spring(response: 0.4, dampingFraction: 0.8), value: isFinished)
-                //Spacer(minLength: 50)
-                Spacer().frame(height: 10)
+                }
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isFinished)
+                
+                Spacer().frame(height: 20)
             }
         }
         .onAppear {
@@ -332,7 +372,7 @@ struct SeaSaltTimer2: View {
                 .frame(width: 8, height: 8)
                 .position(x: x, y: y)
         }
-        .frame(width: 240, height: 240)
+        .frame(width: 260, height: 260)
     }
 
     // MARK: - Timer logic
@@ -340,7 +380,6 @@ struct SeaSaltTimer2: View {
         
         if let start = breakStartDate {
             recordBreak(start: start, end: Date())
-            print("recordBreak:")
             breakStartDate = nil
         }
         
@@ -354,6 +393,12 @@ struct SeaSaltTimer2: View {
             secondsRemaining = totalSeconds
 
         }
+    
+        //Start a timer
+        if totalSeconds == secondsRemaining {
+            dingPlayer.seek(to: .zero)
+            dingPlayer.play()
+        }
 
         isRunning = true
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
@@ -366,6 +411,8 @@ struct SeaSaltTimer2: View {
                 } else {
                     isFinished = true
                     stopTimer()
+                    dingPlayer.seek(to: .zero)
+                    dingPlayer.play()
                 }
             }
 
@@ -378,7 +425,7 @@ struct SeaSaltTimer2: View {
             recordBreak(start: start, end: timestamp)
             breakStartDate = nil
         }
-        print("descriptionMode: \(descriptionMode.rawValue)")
+
         let task = ATask(
             title: title,
             minutes: minutes,
@@ -395,7 +442,7 @@ struct SeaSaltTimer2: View {
         do {
             try modelContext.save()
         } catch {
-            print("Failed to save task: \(error)")
+            //print("Failed to save task: \(error)")
         }
         title = ""
         description = ""
@@ -450,9 +497,8 @@ struct SeaSaltTimer2: View {
 
         do {
             try modelContext.save()
-            print("successfully saved : recordBreak : \(startOfDay.description)")
         } catch {
-            print("Failed to save break stat: \(error)")
+            //print("Failed to save break stat: \(error)")
         }
         
     }
@@ -472,7 +518,6 @@ struct SeaSaltTimer2: View {
         secondsRemaining = totalSeconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             startTimer()
-            print("snooze")
         }
     }
 

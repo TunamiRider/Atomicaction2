@@ -22,15 +22,90 @@ struct PreviewRoutineView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                Button {
+                    router.navigateTo(.createRoutine)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.backward")
+                            .circularIconStyle()
+                    }
+                }
+                .clipShape(Circle())
+                
+                Spacer()
+                Spacer()
+            }
+            .overlay{
+                Spacer()
+                Text("Preview Routine")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                    .shadow(color: Color.black.opacity(0.2), radius: 1, x: 0, y: 1)
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.top, 16)
+            .padding(.bottom, 16)
             List {
-                Section("Your 1-Hour Routine") {
+                Section(header: Text("Your 1-Hour Routine").foregroundStyle(AppTheme.textPrimary)) {
                     ForEach(tasks, id: \.routine_description) { task in
-                        HStack {
-                            Text(task.routine_description)
-                            Spacer()
-                            Text("\(task.minutes) min")
-                                .foregroundStyle(.secondary)
+//                        HStack {
+//                            // Uniform circular badge layout
+//                            Image(systemName: task.icon.systemName)
+//                                .font(.system(size: 18, weight: .semibold))
+//                                .foregroundColor(.black)
+//                                .frame(width: 40, height: 40) // Fixed frame aligns all icons vertically
+//                                .background(
+//                                    Circle()
+//                                        .fill(task.icon.color.opacity(0.2))
+//                                )
+//                                .overlay(
+//                                    Circle()
+//                                        .stroke(task.icon.color, lineWidth: 2) // Fixed: Added hex initializer
+//                                )
+//                            
+//                            Text(task.routine_description)
+//                            Spacer()
+//                            Text("\(task.minutes) min")
+//                                .foregroundStyle(AppTheme.textSecondary)
+//                        }
+                        
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 12) {
+                                // Uniform circular badge layout
+                                Image(systemName: task.icon.systemName)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 40, height: 40) // Fixed frame aligns all icons vertically
+                                    .background(
+                                        Circle()
+                                            .fill(task.icon.color.opacity(0.2))
+                                    )
+                                    .overlay(
+                                        Circle()
+                                            .stroke(task.icon.color, lineWidth: 2) // Fixed: Added hex initializer
+                                    )
+                                
+                                Text(task.routine_description)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text("\(task.minutes) min")
+                                    .foregroundStyle(AppTheme.textSecondary)
+                            }
+                            
+                            // 2. Custom Divider outside the Button
+                            Rectangle()
+                                .fill(Color.primary.opacity(0.15)) // Works in both Light and Dark mode
+                                .frame(height: 1)
                         }
+                        .padding(.vertical, 4)
+                        .listRowSeparator(.hidden)
+                        
                     }
                 }
                 Section {
@@ -59,27 +134,10 @@ struct PreviewRoutineView: View {
         }
         .navigationTitle("Preview")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .navigationBarBackButtonHidden(true)   // 👈 hide default back
-        .background(AppTheme.backgroundGradient.ignoresSafeArea())
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    router.goToCreateRoutine()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.backward")
-                    }
-                }
-            }
-        }
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .alert("Routine saved!", isPresented: $didConfirm) {
             Button("OK") {
-                // Pop back to the home screen
-                
-                
-                //dismiss()
                 router.goToRoutineHome()
             }
             .toolbarColorScheme(.dark, for: .navigationBar)
